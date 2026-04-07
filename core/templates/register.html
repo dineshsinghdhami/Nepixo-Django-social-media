@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Nepixo{% endblock %}
+
+{% block content %}
+<div class="register-wrapper">
+    <div class="card">
+        <h2 class="register-title">Create Account</h2>
+
+        <form method="POST" id="registerForm">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <input type="text" name="first_name" class="form-control"
+                       placeholder="Enter your first name" required>
+            </div>
+
+            <div class="form-group">
+                <input type="text" name="last_name" class="form-control"
+                       placeholder="Enter your last name" required>
+            </div>
+
+            <div class="form-group">
+                <input type="text" name="username" class="form-control"
+                       placeholder="Choose a username" required>
+            </div>
+
+            <div class="form-group">
+                <input type="email" name="email" class="form-control"
+                       placeholder="Enter your email address" required>
+            </div>
+
+            <div class="form-group">
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="passwordInput"
+                           class="form-control"
+                           placeholder="Create a password"
+                           required minlength="6">
+
+                    <button type="button" class="password-toggle" data-target="passwordInput">
+
+                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg"
+                             width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+
+                        <svg class="eye-closed" xmlns="http://www.w3.org/2000/svg"
+                             width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round"
+                             style="display:none;">
+                            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20
+                                     c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"/>
+                            <path d="M1 1l22 22"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4
+                                     c7 0 11 8 11 8a21.82 21.82 0 0 1-4.88 6.68"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="password-wrapper">
+                    <input type="password" name="confirm_password" id="confirmPasswordInput"
+                           class="form-control"
+                           placeholder="Confirm your password"
+                           required>
+
+                    <button type="button" class="password-toggle" data-target="confirmPasswordInput">
+                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg"
+                             width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+
+                        <svg class="eye-closed" xmlns="http://www.w3.org/2000/svg"
+                             width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round"
+                             style="display:none;">
+                            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20
+                                     c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"/>
+                            <path d="M1 1l22 22"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4
+                                     c7 0 11 8 11 8a21.82 21.82 0 0 1-4.88 6.68"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-register">Create Account</button>
+
+            <p class="terms">
+                By registering, you agree to our
+                <a href="#">Terms & Conditions</a> and
+                <a href="#">Privacy Policy</a>
+            </p>
+        </form>
+
+        <p class="text-center">
+            Already have an account?
+            <a href="{% url 'login' %}">Login here</a>
+        </p>
+    </div>
+</div>
+
+<style>
+.register-wrapper {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 0 15px;
+}
+
+.card {
+    padding: 30px;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.register-title {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 42px 12px 12px;
+    font-size: 15px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #1877f2;
+    box-shadow: 0 0 0 2px rgba(24,119,242,.1);
+}
+.password-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #777;
+}
+
+.password-toggle:hover {
+    color: #1877f2;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container {
+    display: none !important;
+}
+
+.btn-register {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    background: #1877f2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-register:hover {
+    background: #166fe5;
+}
+
+.text-center {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.text-center a,
+.terms a {
+    color: #1877f2;
+    text-decoration: none;
+}
+
+.terms {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    margin-top: 15px;
+}
+</style>
+
+<script>
+document.querySelectorAll('.password-toggle').forEach(toggle => {
+    toggle.addEventListener('click', function () {
+        const input = document.getElementById(this.dataset.target);
+        const eyeOpen = this.querySelector('.eye-open');
+        const eyeClosed = this.querySelector('.eye-closed');
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+
+        eyeOpen.style.display = isPassword ? 'none' : 'block';
+        eyeClosed.style.display = isPassword ? 'block' : 'none';
+    });
+});
+</script>
+{% endblock %}

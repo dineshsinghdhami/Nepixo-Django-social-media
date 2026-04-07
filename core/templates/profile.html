@@ -1,0 +1,1370 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.username }} - Profile{% endblock %}
+
+{% block content %}
+<style>
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    .profile-pic-large {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .profile-info {
+        flex: 1;
+    }
+    
+    .profile-stats {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 15px;
+    }
+    
+    .stat-item {
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    
+    .stat-item:hover {
+        color: #1877f2;
+    }
+    
+    .profile-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-message {
+        background: #42b72a;
+        color: white;
+    }
+    
+    .btn-block {
+        background: #dc3545;
+        color: white;
+    }
+
+    .name-edit-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 5px;
+        flex-wrap: wrap;
+    }
+    
+    .name-edit-container h2 {
+        margin: 0;
+    }
+    
+    .edit-profile-btn-small {
+        background: #f0f2f5;
+        color: #050505;
+        border: 1px solid #ddd;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s;
+    }
+    
+    .edit-profile-btn-small:hover {
+        background: #e4e6eb;
+        text-decoration: none;
+        color: #050505;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 0;
+        width: 90%;
+        max-width: 400px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        animation: modalFadeIn 0.3s;
+    }
+    
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+    }
+    
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+    
+    .close-modal:hover {
+        background-color: #f0f2f5;
+    }
+    
+    .modal-body {
+        padding: 0;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .user-list-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        border-bottom: 1px solid #eee;
+        text-decoration: none;
+        color: inherit;
+        transition: background-color 0.2s;
+    }
+    
+    .user-list-item:hover {
+        background-color: #f8f9fa;
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .user-list-item:last-child {
+        border-bottom: none;
+    }
+    
+    .user-list-pic {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 12px;
+    }
+    
+    .user-list-info {
+        flex: 1;
+    }
+    
+    .user-list-name {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+    
+    .user-list-username {
+        font-size: 12px;
+        color: #65676b;
+    }
+    
+    .no-users-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+    
+    .no-users-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+        opacity: 0.5;
+    }
+    
+    /* Posts grid styling (keep existing styles) */
+    .posts-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .post-container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        border: 1px solid #ddd;
+        overflow: hidden;
+    }
+    
+    .post-header {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .profile-pic {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 10px;
+    }
+    
+    .post-header-info {
+        flex: 1;
+    }
+    
+    .post-header-info strong {
+        display: block;
+        font-size: 14px;
+    }
+    
+    .post-header-info .post-time {
+        font-size: 12px;
+        color: #65676b;
+    }
+    
+    .post-content {
+        padding: 15px;
+        line-height: 1.5;
+        font-size: 14px;
+        position: relative;
+    }
+    
+    .post-actions {
+        padding: 10px 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 20px;
+    }
+    
+    .post-action {
+        cursor: pointer;
+        color: #65676b;
+        font-size: 14px;
+        transition: color 0.2s;
+    }
+    
+    .post-action:hover {
+        color: #1877f2;
+    }
+    
+    .comment-section {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        background: #f8f9fa;
+    }
+    
+    .comment-input-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .comment-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 14px;
+        background: white;
+    }
+    
+    .comment-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .comment-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .comment-item:last-child {
+        border-bottom: none;
+    }
+    
+    .comment-user-pic {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    
+    .comment-content {
+        flex: 1;
+    }
+    
+    .comment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    
+    .comment-user {
+        font-weight: bold;
+        font-size: 13px;
+        color: #1877f2;
+    }
+    
+    .comment-time {
+        font-size: 11px;
+        color: #999;
+    }
+    
+    .comment-text {
+        font-size: 13px;
+        line-height: 1.4;
+        color: #333;
+    }
+    
+    .no-posts {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+    
+    .no-posts-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        color: #ddd;
+    }
+ 
+    .post-edit-options {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .edit-post-btn {
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+.edit-post-form {
+    display: none;
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e4e6eb;
+}
+
+.edit-post-textarea {
+    width: 100%;
+    padding: 15px; 
+    border: 2px solid #ddd; 
+    border-radius: 8px; 
+    font-size: 16px; 
+    margin-bottom: 15px; 
+    resize: vertical;
+    min-height: 120px; 
+    line-height: 1.5;
+    transition: border-color 0.2s;
+    font-family: inherit; 
+}
+
+.edit-post-textarea:focus {
+    border-color: #1877f2; 
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.1);
+}
+
+.edit-post-buttons {
+    display: flex;
+    gap: 15px; 
+    justify-content: flex-end;
+}
+
+.save-edit-btn {
+    background: #1877f2; 
+    color: white;
+    border: none;
+    padding: 10px 20px; 
+    border-radius: 8px; 
+    cursor: pointer;
+    font-size: 15px; 
+    font-weight: 600; 
+    transition: all 0.2s;
+    min-width: 80px; 
+}
+
+.save-edit-btn:hover {
+    background: #166fe5; 
+    transform: translateY(-1px); 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cancel-edit-btn {
+    background: #f0f2f5; 
+    color: #050505;
+    border: 1px solid #ddd;
+    padding: 10px 20px; 
+    border-radius: 8px; 
+    cursor: pointer;
+    font-size: 15px; 
+    font-weight: 600; 
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+.cancel-edit-btn:hover {
+    background: #e4e6eb; 
+    transform: translateY(-1px); 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+    
+ 
+
+    .comment-input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.comment-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 14px;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.comment-input:focus {
+    border-color: #1877f2;
+}
+
+.comment-send-btn {
+    background: #1877f2;
+    color: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.confirmation-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.confirmation-content {
+    background-color: white;
+    margin: 20% auto;
+    padding: 0;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    animation: modalFadeIn 0.3s;
+    overflow: hidden;
+}
+
+.confirmation-header {
+    padding: 20px;
+    border-bottom: 1px solid #e4e6eb;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .profile-actions {
+        justify-content: center;
+    }
+    
+    .profile-stats {
+        justify-content: center;
+    }
+    
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+    
+    .name-edit-container {
+        justify-content: center;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .name-edit-container h2 {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    
+    .confirmation-content {
+        margin: 40% auto 20px auto; 
+        width: 90%;
+        max-width: 350px;
+    }
+}
+
+.confirmation-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1c1e21;
+}
+
+.confirmation-body {
+    padding: 20px;
+    text-align: center;
+    color: #65676b;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.confirmation-actions {
+    display: flex;
+    padding: 16px 20px;
+    border-top: 1px solid #e4e6eb;
+    gap: 10px;
+}
+
+.confirmation-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.confirmation-btn-cancel {
+    background: #f0f2f5;
+    color: #1c1e21;
+}
+
+.confirmation-btn-cancel:hover {
+    background: #e4e6eb;
+}
+
+.confirmation-btn-delete {
+    background: #dc3545;
+    color: white;
+}
+
+.confirmation-btn-delete:hover {
+    background: #c82333;
+}
+.comment-send-btn:hover {
+    background: #166fe5;
+}
+
+.comment-send-btn svg {
+    width: 18px;
+    height: 18px;
+}
+</style>
+
+
+<div id="followersModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Followers</h3>
+            <button class="close-modal" onclick="closeModal('followersModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="followersList">
+        </div>
+    </div>
+</div>
+
+<div id="followingModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Following</h3>
+            <button class="close-modal" onclick="closeModal('followingModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="followingList">
+        </div>
+    </div>
+</div>
+
+<div id="confirmationModal" class="confirmation-modal">
+    <div class="confirmation-content">
+        <div class="confirmation-header">
+            <h3>Delete Post</h3>
+        </div>
+        <div class="confirmation-body" id="confirmationMessage">
+            Are you sure you want to delete this post?
+        </div>
+        <div class="confirmation-actions">
+            <button class="confirmation-btn confirmation-btn-cancel" onclick="cancelDelete()">Cancel</button>
+            <button class="confirmation-btn confirmation-btn-delete" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+
+    <div class="card">
+        <div class="profile-header">
+            <div>
+                <div style="position: relative;">
+    {% if profile_user.profile.profile_pic %}
+        <img src="{{ profile_user.profile.profile_pic.url }}" 
+             class="profile-pic-large" 
+             alt="{{ profile_user.username }}'s profile picture"
+             onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'profile-pic-large\' style=\'background:linear-gradient(135deg,#1877f2,#42b72a);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:64px;color:white;text-transform:uppercase;\'>{{ profile_user.first_name|first|default:profile_user.username|first|upper }}</div>'">
+    {% else %}
+        <div class="profile-pic-large" style="background:linear-gradient(135deg,#1877f2,#42b72a);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:64px;color:white;text-transform:uppercase;">
+            {{ profile_user.first_name|first|default:profile_user.username|first|upper }}
+        </div>
+    {% endif %}
+</div>
+            </div>
+            
+            <div class="profile-info">
+              
+                <div class="name-edit-container">
+                    <h2>
+                        {% if profile_user.get_full_name %}{{ profile_user.get_full_name }}{% else %}{{ profile_user.username }}{% endif %}
+                    </h2>
+                    
+                    {% if user == profile_user %}
+                        <a href="{% url 'edit_profile' %}" class="edit-profile-btn-small">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path>
+                            </svg>
+                            Edit Profile
+                        </a>
+                    {% endif %}
+                </div>
+
+                <p style="color: #65676b; font-style: italic; margin: 0 0 15px 0;">
+                    @{{ profile_user.username }}
+                </p>
+ 
+                <div class="profile-actions">
+                    {% if user != profile_user %}
+                        <button type="button" onclick="followUser('{{ profile_user.username }}')" class="btn" id="followBtn">
+                            {% if is_following %}Unfollow{% else %}Follow{% endif %}
+                        </button>
+                        
+                        <button type="button" onclick="openMessageBox('{{ profile_user.username }}')" class="btn btn-message">
+                            Message
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="profile-stats">
+                    <div>
+                        <strong>{{ posts.count }}</strong> posts
+                    </div>
+                    <div class="stat-item" onclick="showFollowers('{{ profile_user.username }}')">
+                        <strong>{{ follower_count }}</strong> followers
+                    </div>
+                    <div class="stat-item" onclick="showFollowing('{{ profile_user.username }}')">
+                        <strong>{{ following_count }}</strong> following
+                    </div>
+                </div>
+
+                <div>
+                    <p>{{ profile_user.profile.bio|default:"No bio yet" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="posts-grid">
+        {% if posts %}
+            {% for post in posts %}
+            <div class="post-container" id="post-{{ post.id }}">
+                <div class="post-header">
+    <div style="position: relative;">
+        {% if post.user.profile.profile_pic %}
+            <img src="{{ post.user.profile.profile_pic.url }}" 
+                 class="profile-pic" 
+                 alt="{{ post.user.username }}'s profile picture"
+                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'profile-pic\' style=\'background:linear-gradient(135deg,#1877f2,#42b72a);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;color:white;text-transform:uppercase;width:40px;height:40px;border-radius:50%;\'>{{ post.user.first_name|first|default:post.user.username|first|upper }}</div>'">
+        {% else %}
+            <div class="profile-pic" style="background:linear-gradient(135deg,#1877f2,#42b72a);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;color:white;text-transform:uppercase;width:40px;height:40px;border-radius:50%;">
+                {{ post.user.first_name|first|default:post.user.username|first|upper }}
+            </div>
+        {% endif %}
+    </div>
+    <div class="post-header-info">
+    <strong>
+        {% if post.user.get_full_name %}
+            {{ post.user.get_full_name }}
+        {% else %}
+            {{ post.user.username }}
+        {% endif %}
+    </strong>
+    <div class="post-time">
+        {{ post.created_at|timesince }} ago
+        {% if post.is_edited %}
+            <span style="color: #666; font-size: 11px;">(edited)</span>
+        {% endif %}
+    </div>
+</div>
+                   
+                    
+                    {% if user == profile_user %}
+                    <div class="post-edit-options">
+                        <button class="edit-post-btn" onclick="editPost({{ post.id }})">
+                            Edit
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Post Content Display -->
+                <div class="post-content" id="postContent-{{ post.id }}">
+                    {{ post.content|linebreaks }}
+                </div>
+                
+                <!-- Edit Post Form (Hidden by default) -->
+                <div class="edit-post-form" id="editForm-{{ post.id }}">
+                    <textarea class="edit-post-textarea" id="editTextarea-{{ post.id }}">{{ post.content }}</textarea>
+                    <div class="edit-post-buttons">
+                        <button class="cancel-edit-btn" onclick="cancelEdit({{ post.id }})">Cancel</button>
+                        <button class="save-edit-btn" onclick="saveEdit({{ post.id }})">Save</button>
+                    </div>
+                </div>
+                <div class="post-actions">
+                    <span class="post-action" onclick="likePost({{ post.id }})">
+                        <span id="likeText-{{ post.id }}">Like</span>
+                        (<span id="likeCount-{{ post.id }}">{{ post.like_count }}</span>)
+                    </span>
+                    
+                    <span class="post-action" onclick="toggleComment({{ post.id }})">
+                        Comment (<span id="commentCount-{{ post.id }}">{{ post.comment_count_value }}</span>)
+                    </span>
+                    
+                    {% if user == profile_user %}
+<span class="post-action" onclick="deletePost({{ post.id }})" style="color: #dc3545;">
+    Delete
+</span>
+{% endif %}
+                </div>
+             
+                <div id="comments-{{ post.id }}" class="comment-section" style="display: none;">
+                    
+<div class="comment-input-container">
+    <input type="text" id="commentInput-{{ post.id }}" class="comment-input" 
+           placeholder="Write a comment..." 
+           onkeypress="if(event.key === 'Enter') addComment({{ post.id }})">
+    <button onclick="addComment({{ post.id }})" class="comment-send-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+        </svg>
+    </button>
+</div>
+                    
+                   
+                    <div class="comment-list" id="commentList-{{ post.id }}">
+                       
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card no-posts">
+                <div class="no-posts-icon">📝</div>
+                <p>
+                    {% if user == profile_user %}
+                        You haven't created any posts yet.
+                    {% else %}
+                        {{ profile_user.username }} hasn't created any posts yet.
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; 
+        }
+    }
+
+let currentPostIdToDelete = null;
+
+function deletePost(postId) {
+    currentPostIdToDelete = postId;
+    const confirmationModal = document.getElementById('confirmationModal');
+    const confirmationMessage = document.getElementById('confirmationMessage');
+    
+    confirmationMessage.textContent = "Are you sure you want to delete this post?";
+
+    confirmationModal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function confirmDelete() {
+    if (currentPostIdToDelete) {
+        performDelete(currentPostIdToDelete);
+    }
+    closeConfirmation();
+}
+
+function cancelDelete() {
+    closeConfirmation();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('keydown', function(event) {
+        const confirmationModal = document.getElementById('confirmationModal');
+        if (confirmationModal && confirmationModal.style.display === 'block') {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                confirmDelete();
+            }
+        }
+    });
+
+});
+
+function closeConfirmation() {
+    const confirmationModal = document.getElementById('confirmationModal');
+    confirmationModal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    currentPostIdToDelete = null;
+}
+
+function performDelete(postId) {
+    fetch('/delete-post/' + postId + '/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const postElement = document.getElementById('post-' + postId);
+            if (postElement) {
+                // Add fade out animation
+                postElement.style.transition = 'opacity 0.3s, transform 0.3s';
+                postElement.style.opacity = '0';
+                postElement.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    if (postElement.parentNode) {
+                        postElement.remove();
+                    }
+
+                    const postsGrid = document.querySelector('.posts-grid');
+                    if (postsGrid && postsGrid.children.length === 0) {
+                        postsGrid.innerHTML = `
+                            <div class="card no-posts">
+                                <div class="no-posts-icon">📝</div>
+                                <p>
+                                    {% if user == profile_user %}
+                                        You haven't created any posts yet.
+                                    {% else %}
+                                        {{ profile_user.username }} hasn't created any posts yet.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        `;
+                    }
+                }, 300);
+            }
+        } else {
+            alert('Failed to delete post. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting post. Please try again.');
+    });
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const openModals = document.querySelectorAll('.modal[style*="display: block"], .confirmation-modal[style*="display: block"]');
+        openModals.forEach(modal => {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+
+        const editForms = document.querySelectorAll('.edit-post-form[style*="display: block"]');
+        editForms.forEach(form => {
+            const postId = form.id.replace('editForm-', '');
+            cancelEdit(postId);
+        });
+    }
+});
+    
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Re-enable scrolling
+        }
+    }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    function showFollowers(username) {
+        const modal = document.getElementById('followersModal');
+        const listContainer = document.getElementById('followersList');
+
+        listContainer.innerHTML = `
+            <div class="no-users-message">
+                <div class="no-users-icon">⏳</div>
+                <p>Loading followers...</p>
+            </div>
+        `;
+        
+        openModal('followersModal');
+
+        fetch(`/api/followers/${username}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch followers');
+                }
+                return response.json();
+            })
+            .then(data => {
+                listContainer.innerHTML = '';
+                
+                if (data.followers.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="no-users-message">
+                            <div class="no-users-icon">👤</div>
+                            <p>No followers yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                data.followers.forEach(follower => {
+                    const userItem = document.createElement('a');
+                    userItem.className = 'user-list-item';
+                    userItem.href = `/profile/${follower.username}/`;
+                    
+                    const profilePicUrl = follower.profile_pic || 'https://via.placeholder.com/40';
+                    
+                    userItem.innerHTML = `
+                        <img src="${profilePicUrl}" class="user-list-pic">
+                        <div class="user-list-info">
+                            <div class="user-list-name">
+                                ${follower.full_name || follower.username}
+                            </div>
+                            <div class="user-list-username">@${follower.username}</div>
+                        </div>
+                    `;
+                    
+                    listContainer.appendChild(userItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                listContainer.innerHTML = `
+                    <div class="no-users-message">
+                        <div class="no-users-icon">⚠️</div>
+                        <p>Failed to load followers</p>
+                        <p style="font-size: 12px; margin-top: 5px;">Please try again</p>
+                    </div>
+                `;
+            });
+    }
+
+    function showFollowing(username) {
+        const modal = document.getElementById('followingModal');
+        const listContainer = document.getElementById('followingList');
+
+        listContainer.innerHTML = `
+            <div class="no-users-message">
+                <div class="no-users-icon">⏳</div>
+                <p>Loading following...</p>
+            </div>
+        `;
+        
+        openModal('followingModal');
+
+        fetch(`/api/following/${username}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch following');
+                }
+                return response.json();
+            })
+            .then(data => {
+                listContainer.innerHTML = '';
+                
+                if (data.following.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="no-users-message">
+                            <div class="no-users-icon">👤</div>
+                            <p>Not following anyone yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                data.following.forEach(following => {
+                    const userItem = document.createElement('a');
+                    userItem.className = 'user-list-item';
+                    userItem.href = `/profile/${following.username}/`;
+                    
+                    const profilePicUrl = following.profile_pic || 'https://via.placeholder.com/40';
+                    
+                    userItem.innerHTML = `
+                        <img src="${profilePicUrl}" class="user-list-pic">
+                        <div class="user-list-info">
+                            <div class="user-list-name">
+                                ${following.full_name || following.username}
+                            </div>
+                            <div class="user-list-username">@${following.username}</div>
+                        </div>
+                    `;
+                    
+                    listContainer.appendChild(userItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                listContainer.innerHTML = `
+                    <div class="no-users-message">
+                        <div class="no-users-icon">⚠️</div>
+                        <p>Failed to load following</p>
+                        <p style="font-size: 12px; margin-top: 5px;">Please try again</p>
+                    </div>
+                `;
+            });
+    }
+ 
+    function followUser(username) {
+        fetch('/follow/' + username + '/')
+            .then(response => response.json())
+            .then(data => {
+                const btn = document.getElementById('followBtn');
+                if (data.followed) {
+                    btn.textContent = 'Unfollow';
+                } else {
+                    btn.textContent = 'Follow';
+                }
+                location.reload();
+            });
+    }
+
+    function editPost(postId) {
+        const postContent = document.getElementById('postContent-' + postId);
+        const editForm = document.getElementById('editForm-' + postId);
+        const editTextarea = document.getElementById('editTextarea-' + postId);
+        
+        if (postContent && editForm) {
+            postContent.style.display = 'none';
+            editForm.style.display = 'block';
+            editTextarea.focus();
+            editTextarea.selectionStart = editTextarea.value.length;
+        }
+    }
+
+    function cancelEdit(postId) {
+        const postContent = document.getElementById('postContent-' + postId);
+        const editForm = document.getElementById('editForm-' + postId);
+        
+        if (postContent && editForm) {
+            postContent.style.display = 'block';
+            editForm.style.display = 'none';
+        }
+    }
+ 
+    function saveEdit(postId) {
+        const editTextarea = document.getElementById('editTextarea-' + postId);
+        const postContent = document.getElementById('postContent-' + postId);
+        const editForm = document.getElementById('editForm-' + postId);
+        
+        if (!editTextarea) return;
+        
+        const newContent = editTextarea.value.trim();
+        
+        if (!newContent) {
+            alert('Post content cannot be empty!');
+            editTextarea.focus();
+            return;
+        }
+      
+        const saveBtn = editForm.querySelector('.save-edit-btn');
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+       
+        fetch('/edit-post/' + postId + '/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: 'content=' + encodeURIComponent(newContent)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                postContent.innerHTML = data.content.replace(/\n/g, '<br>');
+                
+                
+                const postTime = document.querySelector(`#post-${postId} .post-time`);
+                if (postTime && !postTime.innerHTML.includes('(edited)')) {
+                    postTime.innerHTML += ' <span style="color: #666; font-size: 11px;">(edited)</span>';
+                }
+                
+                postContent.style.display = 'block';
+                editForm.style.display = 'none';
+            } else {
+                alert('Failed to update post: ' + (data.error || 'Unknown error'));
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating post. Please try again.');
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        });
+    }
+    
+    function likePost(postId) {
+        fetch('/like/' + postId + '/')
+            .then(response => response.json())
+            .then(data => {
+                const likeText = document.getElementById('likeText-' + postId);
+                const likeCount = document.getElementById('likeCount-' + postId);
+                
+                if (data.liked) {
+                    likeText.textContent = 'Unlike';
+                } else {
+                    likeText.textContent = 'Like';
+                }
+                
+                if (likeCount) {
+                    likeCount.textContent = data.count;
+                }
+            });
+    }
+
+    function toggleComment(postId) {
+        const commentSection = document.getElementById('comments-' + postId);
+        if (commentSection) {
+            if (commentSection.style.display === 'none' || commentSection.style.display === '') {
+                commentSection.style.display = 'block';
+                loadComments(postId);
+            } else {
+                commentSection.style.display = 'none';
+            }
+        }
+    }
+
+    function addComment(postId) {
+        const input = document.getElementById('commentInput-' + postId);
+        if (!input) return;
+        
+        const content = input.value.trim();
+        
+        if (content) {
+            fetch('/comment/' + postId + '/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: 'content=' + encodeURIComponent(content)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    addCommentToUI(postId, data.comment);
+                    updateCommentCount(postId);
+                }
+            });
+        }
+    }
+
+    function loadComments(postId) {
+        const commentList = document.getElementById('commentList-' + postId);
+        if (!commentList) return;
+        
+        commentList.innerHTML = '<p style="padding: 10px; text-align: center; color: #666;">Loading comments...</p>';
+        
+        fetch('/get-comments/' + postId + '/')
+            .then(response => response.json())
+            .then(data => {
+                commentList.innerHTML = '';
+                
+                if (data.comments.length === 0) {
+                    commentList.innerHTML = '<p style="padding: 10px; text-align: center; color: #666;">No comments yet. Be the first to comment!</p>';
+                    return;
+                }
+                
+                data.comments.forEach(comment => {
+                    addCommentToUI(postId, comment, false);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                commentList.innerHTML = '<p style="padding: 10px; text-align: center; color: red;">Error loading comments</p>';
+            });
+    }
+    function addCommentToUI(postId, comment, scrollToBottom = true) {
+        const commentList = document.getElementById('commentList-' + postId);
+        if (!commentList) return;
+        
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'comment-item';
+        
+        const profilePicUrl = comment.profile_pic || 'https://via.placeholder.com/32';
+        
+        commentDiv.innerHTML = `
+            <img src="${profilePicUrl}" class="comment-user-pic">
+            <div class="comment-content">
+                <div class="comment-header">
+                    <span class="comment-user">${comment.user}</span>
+                    <span class="comment-time">${comment.created_at}</span>
+                </div>
+                <div class="comment-text">${comment.content}</div>
+            </div>
+        `;
+        
+        commentList.appendChild(commentDiv);
+        
+        if (scrollToBottom) {
+            commentList.scrollTop = commentList.scrollHeight;
+        }
+    }
+    function updateCommentCount(postId) {
+        const commentCount = document.getElementById('commentCount-' + postId);
+        if (commentCount) {
+            fetch('/get-comments/' + postId + '/')
+                .then(response => response.json())
+                .then(data => {
+                    commentCount.textContent = data.comments.length;
+                });
+        }
+    }
+
+    function openMessageBox(username) {
+        sessionStorage.setItem('openChatWith', username);
+        window.location.href = "{% url 'messages' %}";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[id^="commentCount-"]').forEach(element => {
+            const postId = element.id.replace('commentCount-', '');
+            updateCommentCount(postId);
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+
+                const openModals = document.querySelectorAll('.modal[style*="display: block"]');
+                openModals.forEach(modal => {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                });
+        
+                const editForms = document.querySelectorAll('.edit-post-form[style*="display: block"]');
+                editForms.forEach(form => {
+                    const postId = form.id.replace('editForm-', '');
+                    cancelEdit(postId);
+                });
+            }
+        });
+       
+        document.querySelectorAll('.stat-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-1px)';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+</script>
+
+{% endblock %}

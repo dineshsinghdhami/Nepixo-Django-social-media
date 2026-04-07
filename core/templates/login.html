@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Nepixo{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="card">
+        <h2 class="login-title">Login</h2>
+
+        <form method="POST" id="loginForm">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Username or Email</label>
+                <input type="text"
+                       name="username_or_email"
+                       class="form-control"
+                       placeholder="Enter username or email"
+                       required
+                       autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <div class="password-wrapper">
+                    <input type="password"
+                           name="password"
+                           id="passwordInput"
+                           class="form-control"
+                           placeholder="Enter your password"
+                           required
+                           autocomplete="current-password">
+
+                    <button type="button" id="togglePassword" class="password-toggle">
+ 
+                        <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg"
+                             width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+
+                        <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg"
+                             width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round"
+                             style="display:none;">
+                            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20
+                                     c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"/>
+                            <path d="M1 1l22 22"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4
+                                     c7 0 11 8 11 8a21.82 21.82 0 0 1-4.88 6.68"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="remember-me">
+                <label>
+                    <input type="checkbox" name="remember_me">
+                    <span>Remember me</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-login">Login</button>
+        </form>
+
+        <p class="text-center">
+            Don't have an account?
+            <a href="{% url 'register' %}">Register here</a>
+        </p>
+
+        <p class="text-center small">
+            <a href="{% url 'forgot_password' %}">Forgot Password?</a>
+        </p>
+    </div>
+</div>
+
+<style>
+
+.login-wrapper {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 0 15px;
+}
+
+.card {
+    padding: 30px;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.login-title {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #1877f2;
+    box-shadow: 0 0 0 2px rgba(24,119,242,.1);
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #777;
+    padding: 4px;
+}
+
+.password-toggle:hover {
+    color: #1877f2;
+}
+
+.remember-me {
+    margin-bottom: 20px;
+}
+
+.remember-me label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    background: #1877f2;
+    border: none;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-login:hover {
+    background: #166fe5;
+}
+
+.text-center {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.text-center a {
+    color: #1877f2;
+    text-decoration: none;
+}
+
+.small {
+    font-size: 14px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const passwordInput = document.getElementById('passwordInput');
+    const toggleBtn = document.getElementById('togglePassword');
+    const eyeOpen = document.getElementById('eyeOpen');
+    const eyeClosed = document.getElementById('eyeClosed');
+
+    toggleBtn.addEventListener('click', function () {
+        const isPassword = passwordInput.type === 'password';
+
+        passwordInput.type = isPassword ? 'text' : 'password';
+        eyeOpen.style.display = isPassword ? 'none' : 'block';
+        eyeClosed.style.display = isPassword ? 'block' : 'none';
+    });
+});
+</script>
+{% endblock %}
+
+

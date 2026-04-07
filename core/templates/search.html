@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Users - Nepixo{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    {% if query %}
+    <div class="card">
+        <h2>Search Results for "{{ query }}"</h2>
+        
+        {% if users %}
+    {% for item in users %}
+    {% with user=item.user is_following=item.is_following %}
+    <div class="user-result" style="display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 15px; min-width: 0; flex: 1;">
+            <a href="{% url 'profile' user.username %}">
+                <img src="{% if user.profile.profile_pic %}{{ user.profile.profile_pic.url }}{% else %}https://via.placeholder.com/50{% endif %}" 
+                     style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+            </a>
+            
+            <div style="min-width: 0;">
+                <h4 style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <a href="{% url 'profile' user.username %}" style="text-decoration: none; color: #050505;">{{ user.username }}</a>
+                </h4>
+                {% if user.first_name or user.last_name %}
+                <p style="color: #333; margin: 3px 0 0 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ user.first_name }} {{ user.last_name }}
+                </p>
+                {% endif %}
+                <p style="color: #666; margin: 5px 0 0 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ user.profile.bio|truncatechars:50|default:"No bio" }}
+                </p>
+                <div style="margin-top: 5px; font-size: 13px; color: #1877f2;">
+                    {% if user.profile.follower_count > 0 %}
+                    {{ user.profile.follower_count }} followers
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if user != request.user %}
+        <div style="display: flex; gap: 8px; flex-shrink: 0;">
+            <button onclick="followUser('{{ user.username }}', this)" 
+                    class="btn {% if is_following %}btn-unfollow{% else %}btn-follow{% endif %}" 
+                    style="padding: 8px 16px; font-size: 14px; white-space: nowrap;"
+                    data-following="{{ is_following|yesno:'true,false' }}"
+                    id="followBtn-{{ user.username }}">
+                {% if is_following %}Following{% else %}Follow{% endif %}
+            </button>
+            
+            <button onclick="openMessagesPage('{{ user.username }}')" class="btn btn-message" 
+                    style="padding: 8px 16px; font-size: 14px; white-space: nowrap;">
+                Message
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% endwith %}
+    {% endfor %}
+{% endif %}
+    </div>
+    
+    {% else %}
+    <div class="card">
+        <h2>Discover Users</h2>
+        <p style="color: #666; margin-bottom: 20px;">Use the search bar in the navbar to find users, or explore popular users below:</p>
+        <div class="card" style="margin-top: 20px;">
+            <h3>Popular Users</h3>
+            {% if popular_users %}
+                {% for user in popular_users %}
+                <div class="user-result" style="display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 15px; min-width: 0; flex: 1;">
+                        <a href="{% url 'profile' user.username %}">
+                            <img src="{% if user.profile.profile_pic %}{{ user.profile.profile_pic.url }}{% else %}https://via.placeholder.com/50{% endif %}" 
+                                 style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                        </a>
+                        
+                        <div style="min-width: 0;">
+                            <h4 style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <a href="{% url 'profile' user.username %}" style="text-decoration: none; color: #050505;">{{ user.username }}</a>
+                            </h4>
+                            <p style="color: #666; margin: 5px 0 0 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ user.profile.bio|truncatechars:50|default:"No bio" }}
+                            </p>
+                            <div style="margin-top: 5px; font-size: 13px; color: #1877f2;">
+                                {% if user.profile.follower_count > 0 %}
+                                {{ user.profile.follower_count }} followers
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if user != request.user %}
+                    <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                        <button onclick="followUser('{{ user.username }}', this)" 
+                                class="btn btn-follow" 
+                                style="padding: 8px 16px; font-size: 14px; white-space: nowrap;"
+                                id="followBtn-{{ user.username }}">
+                            Follow
+                        </button>
+                        
+                        <button onclick="openMessagesPage('{{ user.username }}')" class="btn btn-message" 
+                                style="padding: 8px 16px; font-size: 14px; white-space: nowrap;">
+                            Message
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 40px 20px;">
+                    <p style="color: #666;">No popular users to show yet.</p>
+                </div>
+            {% endif %}
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <h3>Recently Active</h3>
+            {% if recent_users %}
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
+                    {% for user in recent_users|slice:":12" %}
+                    <div style="text-align: center; width: 120px;">
+                        <a href="{% url 'profile' user.username %}" style="text-decoration: none; color: inherit;">
+                            <img src="{% if user.profile.profile_pic %}{{ user.profile.profile_pic.url }}{% else %}https://via.placeholder.com/80{% endif %}" 
+                                 style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 3px solid #1877f2;">
+                            <div style="font-weight: bold; font-size: 14px;">{{ user.username }}</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                Last active: {{ user.last_login|timesince }} ago
+                            </div>
+                        </a>
+                        {% if user != request.user %}
+                        <button onclick="followUser('{{ user.username }}')" 
+                                class="btn" 
+                                style="margin-top: 10px; padding: 8px; font-size: 12px; width: 100%;">
+                            Follow
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 20px;">
+                    <p style="color: #666;">No recent users to show.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function followUser(username, buttonElement) {
+        const button = buttonElement || document.getElementById('followBtn-' + username);
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = '...';
+        
+        fetch('/follow/' + username + '/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.followed) {
+                    button.textContent = 'Following';
+                    button.classList.remove('btn-follow');
+                    button.classList.add('btn-unfollow');
+                    button.setAttribute('data-following', 'true');
+                    showToast('You are now following ' + username);
+                } else {
+                    button.textContent = 'Follow';
+                    button.classList.remove('btn-unfollow');
+                    button.classList.add('btn-follow');
+                    button.setAttribute('data-following', 'false');
+                    showToast('Unfollowed ' + username);
+                }
+                updateFollowerCount(username, data.followed);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.textContent = originalText;
+                showToast('Error. Please try again.', 'error');
+            })
+            .finally(() => {
+                button.disabled = false;
+            });
+    }
+    function updateFollowerCount(username, followed) {
+        const userElement = document.querySelector(`[data-username="${username}"]`);
+        if (userElement) {
+            const followerCountEl = userElement.querySelector('.follower-count');
+            if (followerCountEl) {
+                const currentCount = parseInt(followerCountEl.textContent) || 0;
+                followerCountEl.textContent = (currentCount + (followed ? 1 : -1)) + ' followers';
+            }
+        }
+    }
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s, fadeOut 0.3s 2.7s;
+        `;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 3000);
+    }
+    function openMessagesPage(username) {
+        window.location.href = '/messages/' + username + '/';
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbarSearchInput = document.querySelector('.search-input');
+        if (navbarSearchInput && window.location.pathname === '/search/') {
+            setTimeout(() => {
+                navbarSearchInput.focus();
+            }, 100);
+        }
+        document.addEventListener('mouseover', function(e) {
+            if (e.target.classList.contains('btn-unfollow')) {
+                if (e.target.getAttribute('data-following') === 'true') {
+                    e.target.textContent = 'Unfollow';
+                }
+            }
+        });
+        
+        document.addEventListener('mouseout', function(e) {
+            if (e.target.classList.contains('btn-unfollow')) {
+                if (e.target.getAttribute('data-following') === 'true') {
+                    e.target.textContent = 'Following';
+                }
+            }
+        });
+    });
+    function storeFollowUpdate(username, followed) {
+        if (typeof(Storage) !== "undefined") {
+            localStorage.setItem('follow_update', JSON.stringify({
+                username: username,
+                followed: followed,
+                timestamp: new Date().getTime()
+            }));
+        }
+    }
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'follow_update') {
+            const data = JSON.parse(e.newValue);
+            if (data) {
+                const button = document.getElementById('followBtn-' + data.username);
+                if (button) {
+                    if (data.followed) {
+                        button.textContent = 'Following';
+                        button.classList.remove('btn-follow');
+                        button.classList.add('btn-unfollow');
+                        button.setAttribute('data-following', 'true');
+                    } else {
+                        button.textContent = 'Follow';
+                        button.classList.remove('btn-unfollow');
+                        button.classList.add('btn-follow');
+                        button.setAttribute('data-following', 'false');
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+<style>
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+    
+    .btn-follow {
+        background: #1877f2;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+    
+    .btn-follow:hover {
+        background: #166fe5;
+    }
+    
+    .btn-unfollow {
+        background: #e4e6eb;
+        color: #050505;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+    
+    .btn-unfollow:hover {
+        background: #d8dadf;
+    }
+    
+    .btn-message {
+        background: #42b72a;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+    
+    .btn-message:hover {
+        background: #36a420;
+    }
+    
+    .user-result {
+        transition: background-color 0.2s;
+    }
+    
+    .user-result:hover {
+        background-color: #f9f9f9;
+    }
+    
+    /* Mobile responsive adjustments */
+    @media (max-width: 768px) {
+        .user-result {
+            flex-wrap: wrap;
+        }
+        
+        .user-result > div:first-child {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .user-result > div:last-child {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .user-result > div:last-child {
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .btn-follow, .btn-unfollow, .btn-message {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+
+{% block title %}Friend Suggestions - Nepixo{% endblock %}
+
+{% block content %}
+<style>
+    .suggestions-page {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .page-title {
+        margin-bottom: 5px;
+        font-size: 24px;
+        color: #333;
+    }
+    
+    .page-subtitle {
+        color: #666;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    
+    .suggestion {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        gap: 15px;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .suggestion:hover {
+        background: #f9f9f9;
+    }
+    
+    .suggestion-link {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+    
+    .suggestion-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        z-index: 2;
+        position: relative;
+    }
+    
+    .suggestion-content {
+        flex: 1;
+        z-index: 2;
+        position: relative;
+    }
+    
+    .suggestion-name {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        color: #333;
+    }
+    
+    .suggestion-username {
+        font-size: 13px;
+        color: #888;
+        margin-bottom: 8px;
+    }
+    
+    .mutual-friends {
+        font-size: 12px;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .suggestion-actions {
+        display: flex;
+        gap: 10px;
+        z-index: 2;
+        position: relative;
+    }
+    
+    .action-btn {
+        padding: 8px 16px;
+        background: #1877f2;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        min-width: 90px;
+        z-index: 3;
+    }
+    
+    .action-btn:hover {
+        background: #166fe5;
+    }
+    
+    .action-btn.unfollow {
+        background: #f0f0f0;
+        color: #333;
+    }
+    
+    .action-btn.unfollow:hover {
+        background: #e0e0e0;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: #666;
+    }
+    
+    .empty-state h3 {
+        margin-bottom: 10px;
+        color: #444;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+    
+    .page-link {
+        padding: 8px 12px;
+        background: #f0f0f0;
+        color: #333;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+    
+    .page-link:hover {
+        background: #e0e0e0;
+    }
+    
+    .page-link.active {
+        background: #1877f2;
+        color: white;
+    }
+</style>
+
+<div class="suggestions-page">
+    <h2 class="page-title">Friend Suggestions</h2>
+    
+    {% if suggestions %}
+        <p class="page-subtitle">{{ suggestions.paginator.count }} people you may know</p>
+        
+        {% for user in suggestions %}
+        <div class="suggestion" onclick="handleSuggestionClick(event, '{{ user.username }}')">
+            <a href="{% url 'profile' user.username %}" class="suggestion-link"></a>
+            
+            <div class="avatar-container" style="position: relative; z-index: 2;">
+    {% if user.profile_picture %}
+        <img src="{{ user.profile_picture.url }}" 
+             class="suggestion-avatar"
+             alt="{{ user.username }}"
+             onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'avatar-initials large\' style=\'width:50px;height:50px;font-size:22px;\'>{{ user.first_name|first|default:user.username|first|upper }}</div>'">
+    {% else %}
+        <div class="avatar-initials large" style="width:50px;height:50px;font-size:22px;">
+            {{ user.first_name|first|default:user.username|first|upper }}
+        </div>
+    {% endif %}
+</div>
+            <div class="suggestion-content">
+                <h4 class="suggestion-name">
+                    {% if user.first_name or user.last_name %}
+                        {{ user.first_name }} {{ user.last_name }}
+                    {% else %}
+                        {{ user.username }}
+                    {% endif %}
+                </h4>
+                <p class="suggestion-username">@{{ user.username }}</p>
+                
+                {% if user.mutual_friends_count > 0 %}
+                <div class="mutual-friends">
+                    <span>👥</span>
+                    {{ user.mutual_friends_count }} mutual friend{{ user.mutual_friends_count|pluralize }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="suggestion-actions">
+                {% if user.id in following_ids %}
+                    <button class="action-btn unfollow" data-user-id="{{ user.id }}">
+                        Following
+                    </button>
+                {% else %}
+                    <button class="action-btn" data-user-id="{{ user.id }}">
+                        Follow
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% if suggestions.has_other_pages %}
+        <div class="pagination">
+            {% if suggestions.has_previous %}
+                <a href="?page={{ suggestions.previous_page_number }}" class="page-link">
+                    ← Previous
+                </a>
+            {% endif %}
+            
+            {% for num in suggestions.paginator.page_range %}
+                {% if suggestions.number == num %}
+                    <span class="page-link active">{{ num }}</span>
+                {% elif num > suggestions.number|add:'-3' and num < suggestions.number|add:'3' %}
+                    <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if suggestions.has_next %}
+                <a href="?page={{ suggestions.next_page_number }}" class="page-link">
+                    Next →
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="empty-state">
+            <h3>No friend suggestions available</h3>
+            <p>When you follow more people, we'll show you suggestions based on mutual connections.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function handleSuggestionClick(event, username) {
+    if (event.target.tagName === 'BUTTON' || event.target.closest('button')) {
+        return;
+    }
+    window.location.href = `/profile/${username}/`;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.action-btn:not(.unfollow)').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const userId = this.getAttribute('data-user-id');
+            followUser(userId, this);
+        });
+    });
+
+    document.querySelectorAll('.action-btn.unfollow').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const userId = this.getAttribute('data-user-id');
+            unfollowUser(userId, this);
+        });
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function followUser(userId, button) {
+    button.disabled = true;
+    button.textContent = '...';
+    
+    fetch('/follow/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            user_id: userId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+    
+            button.textContent = 'Following';
+            button.classList.add('unfollow');
+            button.disabled = false;
+       
+            button.onclick = function(e) {
+                e.stopPropagation();
+                unfollowUser(userId, this);
+            };
+        } else {
+            button.textContent = 'Follow';
+            button.disabled = false;
+            alert('Failed to follow user');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.textContent = 'Follow';
+        button.disabled = false;
+    });
+}
+
+function unfollowUser(userId, button) {
+    if (!confirm('Are you sure you want to unfollow this user?')) {
+        return;
+    }
+    
+    button.disabled = true;
+    button.textContent = '...';
+    
+    fetch('/unfollow/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            user_id: userId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            button.textContent = 'Follow';
+            button.classList.remove('unfollow');
+            button.disabled = false;
+            
+
+            button.onclick = function(e) {
+                e.stopPropagation();
+                followUser(userId, this);
+            };
+        } else {
+            button.textContent = 'Following';
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.textContent = 'Following';
+        button.disabled = false;
+    });
+}
+</script>
+
+{% endblock %}
+
+

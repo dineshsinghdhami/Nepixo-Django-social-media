@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - Nepixo{% endblock %}
+
+{% block content %}
+<style>
+    .notifications-page {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .page-title {
+        margin-bottom: 5px;
+        font-size: 24px;
+        color: #333;
+    }
+    
+    .page-subtitle {
+        color: #666;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+    
+    .action-btn {
+        padding: 8px 16px;
+        background: #1877f2;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .action-btn:hover {
+        background: #166fe5;
+    }
+    
+    .action-btn.secondary {
+        background: #f0f0f0;
+        color: #333;
+    }
+    
+    .action-btn.secondary:hover {
+        background: #e0e0e0;
+    }
+    
+    .notification {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        gap: 15px;
+        position: relative;
+        cursor: pointer;
+    }
+    
+    .notification.unread {
+        background: #f8f9fa;
+        border-left: 3px solid #1877f2;
+    }
+    
+    .notification-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .notification-content {
+        flex: 1;
+    }
+    
+    .notification-text {
+        margin: 0 0 5px 0;
+        color: #333;
+    }
+    
+    .notification-time {
+        font-size: 12px;
+        color: #888;
+    }
+    
+    .notification-actions {
+        display: flex;
+        gap: 10px;
+        z-index: 2;
+        position: relative;
+    }
+    
+    .small-btn {
+        padding: 5px 10px;
+        background: #1877f2;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+        z-index: 3;
+    }
+    
+    .small-btn.following {
+        background: #666;
+        color: white;
+        cursor: default;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: #666;
+    }
+    
+    .empty-state h3 {
+        margin-bottom: 10px;
+        color: #444;
+    }
+    
+    .notification-link {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+</style>
+
+<div class="notifications-page">  
+    {% if notifications %}
+        <div class="action-buttons">
+            <button onclick="markAllAsRead()" class="action-btn" id="markAllBtn">
+                Mark all as read
+            </button>
+            <button onclick="clearAllNotifications()" class="action-btn secondary" id="clearAllBtn">
+                Clear all
+            </button>
+        </div>
+        
+        {% for notification in notifications %}
+        <div class="notification {% if not notification.is_read %}unread{% endif %}" 
+             id="notification-{{ notification.id }}"
+             onclick="handleNotificationClick(event, {{ notification.id }})"
+             data-following="{% if notification.is_current_user_following %}true{% else %}false{% endif %}"
+             data-actor-username="{{ notification.actor.username }}">
+            <a href="{{ notification.get_redirect_url }}" class="notification-link"></a>
+            
+            <img src="{% if notification.actor.profile.profile_pic %}{{ notification.actor.profile.profile_pic.url }}{% else %}https://via.placeholder.com/40{% endif %}" 
+                 class="notification-avatar"
+                 alt="{{ notification.actor.username }}">
+            
+            <div class="notification-content">
+                <p class="notification-text">
+                    <strong>{{ notification.actor.username }}</strong>
+                    {% if notification.type == 'like' %}
+                        liked your post
+                    {% elif notification.type == 'comment' %}
+                        commented on your post
+                    {% elif notification.type == 'follow' %}
+                        started following you
+                    {% elif notification.type == 'friend_request' %}
+                        sent you a friend request
+                    {% elif notification.type == 'tag' %}
+                        tagged you in a post
+                    {% else %}
+                        {{ notification.message }}
+                    {% endif %}
+                </p>
+                <p class="notification-time">{{ notification.created_at|timesince }} ago</p>
+            </div>
+            
+            <div class="notification-actions">
+                {% if not notification.is_read %}
+                <button class="small-btn mark-read-btn" onclick="markAsRead({{ notification.id }}, event)">
+                    Mark read
+                </button>
+                {% endif %}
+                
+                {% if notification.type == 'follow' %}
+                    {% if notification.is_current_user_following %}
+                    <button class="small-btn following" disabled>
+                        Following
+                    </button>
+                    {% else %}
+                    <button class="small-btn follow-back-btn" 
+                            onclick="followUser('{{ notification.actor.username }}', {{ notification.id }}, event)">
+                        Follow back
+                    </button>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <h3>No notifications yet</h3>
+            <p>Your notifications will appear here</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function handleNotificationClick(event, notificationId) {
+        if (event.target.tagName === 'BUTTON' || event.target.closest('button')) {
+            return;
+        }
+        const notification = document.getElementById('notification-' + notificationId);
+        if (notification.classList.contains('unread')) {
+            markAsRead(notificationId, null);
+        }
+        const link = notification.querySelector('.notification-link');
+        if (link) {
+            window.location.href = link.href;
+        }
+    }
+    function markAsRead(notificationId, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        
+        fetch('/mark-notification-read/' + notificationId + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const notification = document.getElementById('notification-' + notificationId);
+                notification.classList.remove('unread');
+                
+                const markReadBtn = notification.querySelector('.mark-read-btn');
+                if (markReadBtn) {
+                    markReadBtn.remove();
+                }
+            }
+        });
+    }
+
+    function markAllAsRead() {
+        const btn = document.getElementById('markAllBtn');
+        btn.textContent = 'Processing...';
+        btn.disabled = true;
+        
+        fetch('/mark-all-notifications-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelectorAll('.notification.unread').forEach(notification => {
+                    notification.classList.remove('unread');
+                    const btn = notification.querySelector('.mark-read-btn');
+                    if (btn) {
+                        btn.remove();
+                    }
+                });
+            }
+            btn.textContent = 'Mark all as read';
+            btn.disabled = false;
+        });
+    }
+    
+function clearAllNotifications() {
+    const btn = document.getElementById('clearAllBtn');
+    btn.textContent = 'Clearing...';
+    btn.disabled = true;
+    
+    fetch('/clear-all-notifications/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            btn.textContent = 'Clear all';
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.textContent = 'Clear all';
+        btn.disabled = false;
+    });
+}
+    function followUser(username, notificationId, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        
+        const notificationItem = document.getElementById('notification-' + notificationId);
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '...';
+        button.disabled = true;
+        
+        fetch('/follow/' + username + '/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.followed) {
+                    button.textContent = 'Following';
+                    button.classList.remove('follow-back-btn');
+                    button.classList.add('following');
+                    button.disabled = true;
+                    button.onclick = null;
+                    notificationItem.setAttribute('data-following', 'true');
+                    markAsRead(notificationId, null);
+                } else if (data.followed === false) {
+                    button.textContent = 'Following';
+                    button.classList.remove('follow-back-btn');
+                    button.classList.add('following');
+                    button.disabled = true;
+                    button.onclick = null;
+                    
+                    notificationItem.setAttribute('data-following', 'true');
+                } else {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    alert(data.error || 'Failed to follow user');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.follow-back-btn').forEach(button => {
+        });
+    });
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+{% endblock %}
+
+
