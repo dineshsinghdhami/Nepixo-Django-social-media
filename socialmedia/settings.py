@@ -148,4 +148,3 @@ EMAIL_HOST_USER = 'info.nepixo@gmail.com'
 EMAIL_HOST_PASSWORD = 'lpsz rlla vynn kxhd'  
 
 DEFAULT_FROM_EMAIL = 'info.nepixo@gmail.com'
-
