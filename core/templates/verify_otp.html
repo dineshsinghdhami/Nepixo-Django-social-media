@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify OTP - Nepixo{% endblock %}
+
+{% block content %}
+<div class="otp-wrapper">
+    <div class="card">
+        <h2 class="otp-title">Verify Your Email</h2>
+
+        <p class="otp-subtitle">
+            We have sent a 6-digit OTP to your email. Please enter it below.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <input type="text" name="otp"
+                       class="form-control otp-input"
+                       placeholder="Enter OTP"
+                       maxlength="6"
+                       required>
+            </div>
+
+            <button type="submit" class="btn-otp">
+                Verify OTP
+            </button>
+        </form>
+
+        <p class="text-center">
+            Didn’t receive code?
+            <a href="{% url 'resend_otp' %}">Resend OTP</a>
+        </p>
+    </div>
+</div>
+
+<style>
+.otp-wrapper {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 0 15px;
+}
+
+.card {
+    padding: 30px;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.otp-title {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.otp-subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    text-align: center;
+    letter-spacing: 5px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #1877f2;
+    box-shadow: 0 0 0 2px rgba(24,119,242,.1);
+}
+
+.btn-otp {
+    width: 100%;
+    padding: 12px;
+    background: #1877f2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-otp:hover {
+    background: #166fe5;
+}
+
+.text-center {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 13px;
+}
+
+.text-center a {
+    color: #1877f2;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
