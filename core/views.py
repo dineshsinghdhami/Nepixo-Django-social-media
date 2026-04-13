@@ -342,20 +342,28 @@ def register_view(request):
         
         try:
          
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=first_name,
-                last_name=last_name
-            )
-   
-            login(request, user)
-            
-     
-            messages.success(request, f"Welcome {first_name}! Your account has been created.")
-            
-            return redirect('home')
+            from .utils import generate_otp, send_otp_email
+
+            # Generate OTP
+            otp = generate_otp()
+
+            # Store user data in session
+            request.session['register_data'] = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'username': username,
+                'email': email,
+                'password': password,
+            }
+
+            request.session['otp'] = otp
+
+            # Send OTP email
+            if send_otp_email(email, otp):
+                return redirect('verify_otp')
+            else:
+                messages.error(request, "Failed to send OTP")
+                return redirect('register')
             
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
@@ -1257,3 +1265,48 @@ def post_detail_view(request, post_id):
         'comments': comments,
         'user_has_liked': user_has_liked
     })
+def verify_otp(request):
+    if request.method == 'POST':
+        user_otp = request.POST.get('otp')
+        session_otp = request.session.get('otp')
+
+        if user_otp == session_otp:
+            data = request.session.get('register_data')
+
+            user = User.objects.create_user(
+                username=data['username'],
+                email=data['email'],
+                password=data['password'],
+                first_name=data['first_name'],
+                last_name=data['last_name']
+            )
+
+            # Clear session
+            request.session.pop('otp', None)
+            request.session.pop('register_data', None)
+
+            login(request, user)
+            messages.success(request, "Account created successfully!")
+            return redirect('home')
+        else:
+            messages.error(request, "Invalid OTP")
+
+    return render(request, 'verify_otp.html')
+
+
+from .utils import generate_otp, send_otp_email
+
+def resend_otp(request):
+    data = request.session.get('register_data')
+
+    if not data:
+        messages.error(request, "Session expired. Please register again.")
+        return redirect('register')
+
+    otp = generate_otp()
+    request.session['otp'] = otp
+
+    send_otp_email(data['email'], otp)
+
+    messages.success(request, "OTP resent successfully!")
+    return redirect('verify_otp')
